@@ -1,41 +1,161 @@
-# Compiled Lua sources
-luac.out
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
 
-# luarocks build files
-*.src.rock
-*.zip
-*.tar.gz
+-- Crear la ventana principal
+local Window = OrionLib:MakeWindow({
+    Name = "Arcerus X",
+    HidePremium = false,
+    SaveConfig = true,
+    ConfigFolder = "ArcerusConfig"
+})
 
-# Object files
-*.o
-*.os
-*.ko
-*.obj
-*.elf
+-- Crear la pestaña principal
+local Tab = Window:MakeTab({
+    Name = "Principal",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
 
-# Precompiled Headers
-*.gch
-*.pch
+-- Sección para opciones de vuelo
+local FlySection = Tab:AddSection({
+    Name = "Opciones de Vuelo"
+})
 
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
-*.def
-*.exp
+local flying = false
+local flySpeed = 50
 
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
+local function toggleFly(state)
+    flying = state
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:WaitForChild("Humanoid")
+    
+    if flying then
+        humanoid.PlatformStand = true
+        while flying do
+            humanoid:Move(Vector3.new(0, flySpeed, 0), true)
+            wait(0.1)
+        end
+    else
+        humanoid.PlatformStand = false
+    end
+end
 
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
+FlySection:AddToggle({
+    Name = "Activar Vuelo",
+    Default = false,
+    Callback = function(Value)
+        toggleFly(Value)
+    end    
+})
 
+FlySection:AddSlider({
+    Name = "Velocidad de Vuelo",
+    Min = 0,
+    Max = 200,
+    Default = 50,
+    Increment = 10,
+    Callback = function(Value)
+        flySpeed = Value
+    end    
+})
+
+-- Sección para traspasar paredes
+local WallHackSection = Tab:AddSection({
+    Name = "Traspasar Paredes"
+})
+
+local noclip = false
+
+local function toggleNoclip(state)
+    noclip = state
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+
+    if noclip then
+        while noclip do
+            for _, v in pairs(character:GetDescendants()) do
+                if v:IsA("BasePart") then
+                    v.CanCollide = false
+                end
+            end
+            wait(0.1)
+        end
+    else
+        for _, v in pairs(character:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.CanCollide = true
+            end
+        end
+    end
+end
+
+WallHackSection:AddToggle({
+    Name = "Activar Noclip",
+    Default = false,
+    Callback = function(Value)
+        toggleNoclip(Value)
+    end    
+})
+
+-- Sección para modificar la velocidad, salto y gravedad
+local StatsSection = Tab:AddSection({
+    Name = "Modificación de Estadísticas"
+})
+
+StatsSection:AddSlider({
+    Name = "Velocidad",
+    Min = 16,
+    Max = 500,
+    Default = 16,
+    Increment = 10,
+    Callback = function(Value)
+        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
+    end    
+})
+
+StatsSection:AddSlider({
+    Name = "Altura de Salto",
+    Min = 50,
+    Max = 500,
+    Default = 50,
+    Increment = 10,
+    Callback = function(Value)
+        game.Players.LocalPlayer.Character.Humanoid.JumpPower = Value
+    end    
+})
+
+StatsSection:AddSlider({
+    Name = "Gravedad",
+    Min = 50,
+    Max = 500,
+    Default = 196.2,
+    Increment = 10,
+    Callback = function(Value)
+        game.Workspace.Gravity = Value
+    end    
+})
+
+-- Sección para teletransportación
+local TeleportSection = Tab:AddSection({
+    Name = "Teletransportación"
+})
+
+local teleportActive = false
+
+TeleportSection:AddToggle({
+    Name = "Activar Teletransporte",
+    Default = false,
+    Callback = function(Value)
+        teleportActive = Value
+    end    
+})
+
+game.Players.LocalPlayer:GetMouse().Button1Down:Connect(function()
+    if teleportActive then
+        local mouse = game.Players.LocalPlayer:GetMouse()
+        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(mouse.Hit.p)
+    end
+end)
+
+-- Finalizar e inicializar la interfaz
+OrionLib:Init()
